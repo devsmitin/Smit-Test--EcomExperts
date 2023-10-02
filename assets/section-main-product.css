@@ -1598,3 +1598,17 @@ a.product__text {
     border: none;
   }
 }
+
+
+.product-form__input[data-option="Color"] input[type='radio'] + label {
+  height: 60px;
+  width: 60px;
+  border-radius: 50%;
+  font-size: 0;
+  background: var(--bg-image);
+  background-size: cover;
+  background-position: center center;
+}
+.product-form__input[data-option="Color"] input[type='radio']:checked + label {
+  box-shadow: 0 0 0 1px #000;
+}

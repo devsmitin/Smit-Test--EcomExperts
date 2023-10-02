@@ -21,6 +21,12 @@
   assign variants_option3_arr = product.variants | map: 'option3'
 
   assign product_form_id = 'product-form-' | append: section.id
+
+  if display_picker_type
+    assign picker_type = display_picker_type
+  else
+    assign picker_type = block.settings.picker_type
+  endif
 -%}
 
 {%- for value in option.values -%}
@@ -45,7 +51,7 @@
     endfor
   -%}
 
-  {%- if block.settings.picker_type == 'button' -%}
+  {%- if picker_type == 'button' -%}
     <input
       type="radio"
       id="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}"
@@ -59,14 +65,15 @@
         class="disabled"
       {% endif %}
     >
-    <label for="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}">
+    <label for="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}"
+      {% if option.name == "Color" %}title="{{ value }}" style="--bg-image: {{ value | downcase }} url('{{ value | downcase | append: '.jpg' | file_img_url: 'large' | prepend: "https:" }}');"{% endif %}>
       {{ value -}}
       <span class="visually-hidden">{{ 'products.product.variant_sold_out_or_unavailable' | t }}</span>
     </label>
-  {%- elsif block.settings.picker_type == 'dropdown' -%}
+  {%- elsif picker_type == 'dropdown' -%}
     <option
       value="{{ value | escape }}"
-      {% if option.selected_value == value %}
+      {% if option.selected_value == value and display_picker_type != "dropdown" %}
         selected="selected"
       {% endif %}
     >

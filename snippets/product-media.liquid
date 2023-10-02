@@ -15,6 +15,15 @@
 {% endcomment %}
 
 {%- if media.media_type == 'image' -%}
+  {% comment %} add data (color and index) based on alt tag {% endcomment %}
+  {% liquid
+    assign data_color = media.alt | split: '|'
+    if data_color.size > 1
+      assign data_color = data_color | last
+    else
+      assign data_color = ""
+    endif
+  %}
   <img
     class="global-media-settings global-media-settings--no-shadow{% if variant_image %} product__media-item--variant{% endif %}"
     srcset="{%- if media.preview_image.width >= 550 -%}{{ media.preview_image | image_url: width: 550 }} 550w,{%- endif -%}
@@ -33,6 +42,7 @@
     width="1100"
     height="{{ 1100 | divided_by: media.preview_image.aspect_ratio | ceil }}"
     data-media-id="{{ media.id }}"
+    data-color="{{ data_color | strip }}"
   >
 {%- else -%}
   {%- if media.media_type == 'model' -%}

@@ -1046,6 +1046,8 @@ class VariantSelects extends HTMLElement {
   }
 
   setInputAvailability(listOfOptions, listOfAvailableOptions) {
+    // Basically this changes the text of unavailable option - which we don't need
+    return false;
     listOfOptions.forEach((input) => {
       if (listOfAvailableOptions.includes(input.getAttribute('value'))) {
         input.innerText = input.getAttribute('value');
@@ -1086,7 +1088,7 @@ class VariantSelects extends HTMLElement {
       .then((response) => response.text())
       .then((responseText) => {
         // prevent unnecessary ui changes from abandoned selections
-        if (this.currentVariant.id !== requestedVariantId) return;
+        if (!this.currentVariant || this.currentVariant.id !== requestedVariantId) return;
 
         const html = new DOMParser().parseFromString(responseText, 'text/html');
         const destination = document.getElementById(`price-${this.dataset.section}`);
@@ -1179,7 +1181,7 @@ class VariantSelects extends HTMLElement {
 
     if (!addButton) return;
     addButtonText.textContent = window.variantStrings.unavailable;
-    if (price) price.classList.add('visibility-hidden');
+    if (price) price.textContent = this.dataset.prices;
     if (inventory) inventory.classList.add('visibility-hidden');
     if (sku) sku.classList.add('visibility-hidden');
     if (pricePerItem) pricePerItem.classList.add('visibility-hidden');
@@ -1257,3 +1259,74 @@ class ProductRecommendations extends HTMLElement {
 }
 
 customElements.define('product-recommendations', ProductRecommendations);
+
+class CustomOptionSelector extends VariantSelects {
+  constructor() {
+    super();
+    this.addEventListener("change", this.onVariantChangeMod);
+    this.toggleAddButton(true, "", true);
+    this.setUnavailable();
+  }
+
+  onVariantChangeMod() {
+    this.onVariantChange();
+    this.updateFeaturedImage();
+  }
+
+  updateOptions() {
+    const allOptions = Array.from(this.querySelectorAll("fieldset, select"));
+    this.options = [];
+
+    allOptions.map((option) => {
+      let optionValue =
+        option.tagName === "FIELDSET"
+          ? option.querySelector("input[type='radio']:checked").value
+          : option.value;
+
+      this.options.push(optionValue);
+    });
+
+    if (this.options.includes("")) {
+      window.history.replaceState({}, "", `${this.dataset.url}`);
+    }
+  }
+
+  updateFeaturedImage() {
+    let colorOpt =
+      [...this.querySelectorAll("fieldset, select")].find(
+        (option) => option.dataset.option === "Color"
+      );
+    let selectedColor = this.options[colorOpt.dataset.position - 1];
+
+    if (!this.currentVariant) {
+      const imagesContainer  = document.querySelector(".product__media-list");
+      const images = imagesContainer.querySelectorAll(".product__media-item");
+      const sortedImages = [...images].sort((a, b) => a.dataset.index - b.dataset.index);
+      sortedImages.forEach(element => imagesContainer.appendChild(element));
+      images.forEach(image => image.classList.remove("hidden"));
+    } else {
+      const mediaGalleries = document.querySelectorAll(`[id^="MediaGallery-${this.dataset.section}"]`);
+      const filterGallery = (gallery) => {
+        gallery.querySelectorAll(".product__media-item").forEach((item) => {
+          if (item.dataset.color !== selectedColor) {
+            item.classList.add("hidden");
+          } else {
+            item.classList.remove("hidden");
+            (item.parentNode).prepend(item);
+          }
+        });
+      };
+  
+      mediaGalleries.forEach((mediaGallery) => {
+        filterGallery(mediaGallery);
+      });
+  
+      const modalContent = document.querySelector(`#ProductModal-${this.dataset.section} .product-media-modal__content`);
+      if (!modalContent) return;
+      const newMediaModal = modalContent.querySelector(`[data-color="${selectedColor}"]`);
+      modalContent.prepend(newMediaModal);
+    }
+  }
+}
+
+customElements.define('custom-options', CustomOptionSelector);
